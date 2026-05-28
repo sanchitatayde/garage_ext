@@ -1,26 +1,64 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Surfaces */
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f4f4f5;
+  --color-border: #e4e4e7;
+  --color-border-strong: #d4d4d8;
+
+  /* Ink + text */
+  --color-ink: #0a0a0a;
+  --color-ink-2: #27272a;
+  --color-muted: #71717a;
+  --color-subtle: #a1a1aa;
+
+  /* Brand (Zoop green) */
+  --color-brand: #16a34a;
+  --color-brand-soft: #ecfdf5;
+  --color-brand-strong: #15803d;
+
+  /* Semantic */
+  --color-success: #16a34a;
+  --color-success-soft: #ecfdf5;
+  --color-warn: #d97706;
+  --color-warn-soft: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-info: #2563eb;
+  --color-info-soft: #eff6ff;
+
+  /* Fonts (loaded via next/font in app/layout.tsx) */
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html, body { background: var(--color-bg); color: var(--color-ink); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+/* Phone-shell wrapper for desktop preview of mobile-first screens. */
+.app-frame {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  background: var(--color-surface);
+  position: relative;
+  overflow: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Focus ring helper for custom focusables */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Horizontally-scrolling carousel containers — hide the scrollbar */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Drawer enter animations */
+@keyframes drawerSlideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes drawerFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.drawer-panel-enter { animation: drawerSlideIn 200ms ease-out both; }
+.drawer-backdrop-enter { animation: drawerFadeIn 180ms ease-out both; }
