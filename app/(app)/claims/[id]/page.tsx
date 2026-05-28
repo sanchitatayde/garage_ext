@@ -1,5 +1,6 @@
+"use client";
+import { use } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Info, MessageCircle } from "lucide-react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -9,15 +10,44 @@ import { VerticalStepper } from "@/components/claims/VerticalStepper";
 import { getClaim } from "@/lib/mock-data";
 import { inr } from "@/lib/format";
 import { statusLabel } from "@/lib/claim-helpers";
+import { toast } from "@/lib/store/toast";
+import { cn } from "@/lib/cn";
 
-export default async function ClaimDetailPage({
+export default function ClaimDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id } = use(params);
   const claim = getClaim(id);
-  if (!claim) return notFound();
+
+  if (!claim) {
+    return (
+      <>
+        <PageHeader title="Claim not found" />
+        <main className="px-5 py-8 text-center">
+          <p className="text-[14px] text-muted">
+            We couldn&apos;t find that claim. Tap back to return.
+          </p>
+        </main>
+      </>
+    );
+  }
+
+  const isNegative =
+    claim.status === "repudiated" || claim.status === "rejected";
+  const isClosed = claim.status === "closed" || claim.status === "settled";
+  const hasStages = !!claim.stages && claim.stages.length > 0;
+
+  function viewPhotos() {
+    const el = document.getElementById("damage-photos");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    else toast("Damage photos will appear once uploaded.", "info");
+  }
+
+  function openDocs(label: string) {
+    toast(`${label} gallery — coming soon.`, "info");
+  }
 
   return (
     <main>
@@ -35,20 +65,65 @@ export default async function ClaimDetailPage({
         }
       />
 
-      {/* Vehicle status banner */}
-      <section className="bg-brand-soft px-5 py-4">
+      {/* Vehicle status banner — colour adapts to status */}
+      <section
+        className={cn(
+          "px-5 py-4",
+          isNegative
+            ? "bg-danger-soft"
+            : isClosed
+            ? "bg-surface-sunken"
+            : "bg-brand-soft"
+        )}
+      >
         <div className="flex items-center gap-1.5 text-ink flex-wrap">
           <span className="text-[16px] font-semibold">{claim.vehicle}</span>
           <span className="text-muted">·</span>
           <span className="font-mono text-[14px] text-ink">{claim.regNo}</span>
           <Info size={14} className="text-muted ml-1" />
         </div>
-        <p className="font-mono text-[11px] tracking-wide text-brand-strong font-semibold uppercase mt-1">
+        <p
+          className={cn(
+            "font-mono text-[11px] tracking-wide font-semibold uppercase mt-1",
+            isNegative
+              ? "text-danger"
+              : isClosed
+              ? "text-muted"
+              : "text-brand-strong"
+          )}
+        >
           {statusLabel(claim.status)}
         </p>
       </section>
 
       <section className="px-5 py-4 space-y-4">
+        {/* Repudiation reason card */}
+        {isNegative && claim.statusDetail && (
+          <Card padding="md" className="border-danger/30 bg-danger-soft/60">
+            <p className="text-[12px] font-mono uppercase tracking-wide text-danger">
+              Reason
+            </p>
+            <p className="text-[15px] font-semibold text-ink mt-1">
+              {claim.statusDetail}
+            </p>
+          </Card>
+        )}
+
+        {/* Status detail (non-detail-rich, non-negative claims) */}
+        {!isNegative && !hasStages && claim.statusDetail && (
+          <Card padding="md">
+            <p className="text-[12px] font-mono uppercase tracking-wide text-muted">
+              Current status
+            </p>
+            <p className="text-[16px] font-semibold text-ink mt-1">
+              {claim.statusDetail}
+            </p>
+            <p className="text-[12px] text-muted mt-2">
+              Updated {claim.updatedAt}
+            </p>
+          </Card>
+        )}
+
         {/* Estimate Approved card */}
         {claim.approvedAmount && (
           <Card padding="md" className="space-y-3">
@@ -84,24 +159,24 @@ export default async function ClaimDetailPage({
           </Card>
         )}
 
-        {/* View Repair photos CTA */}
-        <Button fullWidth size="lg" type="button">
-          View Repair photos
-        </Button>
+        {/* View Repair photos CTA — only when damage photos exist */}
+        {claim.damagePhotos && (
+          <Button fullWidth size="lg" type="button" onClick={viewPhotos}>
+            View Repair photos
+          </Button>
+        )}
 
         {/* Timeline */}
-        <div className="pt-2">
-          <h2 className="text-[18px] font-semibold text-ink mb-3">Timeline</h2>
-          <Card padding="md">
-            {claim.stages && claim.stages.length > 0 ? (
-              <VerticalStepper stages={claim.stages} />
-            ) : (
-              <p className="text-[13px] text-muted">
-                Timeline will appear once the claim progresses.
-              </p>
-            )}
-          </Card>
-        </div>
+        {hasStages && (
+          <div className="pt-2">
+            <h2 className="text-[18px] font-semibold text-ink mb-3">
+              Timeline
+            </h2>
+            <Card padding="md">
+              <VerticalStepper stages={claim.stages!} />
+            </Card>
+          </div>
+        )}
 
         {/* Documents */}
         {claim.documents && (
@@ -112,19 +187,21 @@ export default async function ClaimDetailPage({
             <DocsRow
               count={claim.documents.count}
               subtitle={claim.documents.lastAddedRelative}
+              onClick={() => openDocs("Documents")}
             />
           </div>
         )}
 
         {/* Damage Photos */}
         {claim.damagePhotos && (
-          <div>
+          <div id="damage-photos">
             <h2 className="text-[18px] font-semibold text-ink mb-2">
               Damage Photos
             </h2>
             <DocsRow
               count={claim.damagePhotos.count}
               subtitle={claim.damagePhotos.lastAddedRelative}
+              onClick={() => openDocs("Damage Photos")}
             />
           </div>
         )}
@@ -140,24 +217,32 @@ export default async function ClaimDetailPage({
 function DocsRow({
   count,
   subtitle,
+  onClick,
 }: {
   count: number;
   subtitle: string;
+  onClick?: () => void;
 }) {
   return (
-    <Card
-      padding="md"
-      className="flex items-center gap-3 hover:bg-surface-sunken transition cursor-pointer"
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand rounded-[16px]"
     >
-      <ThumbStack />
-      <div className="flex-1">
-        <p className="text-[15px] font-semibold text-ink">
-          {count} uploaded
-        </p>
-        <p className="text-[12px] text-muted">{subtitle}</p>
-      </div>
-      <span className="text-subtle text-lg">›</span>
-    </Card>
+      <Card
+        padding="md"
+        className="flex items-center gap-3 hover:bg-surface-sunken transition"
+      >
+        <ThumbStack />
+        <div className="flex-1">
+          <p className="text-[15px] font-semibold text-ink">
+            {count} uploaded
+          </p>
+          <p className="text-[12px] text-muted">{subtitle}</p>
+        </div>
+        <span className="text-subtle text-lg">›</span>
+      </Card>
+    </button>
   );
 }
 

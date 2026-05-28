@@ -37,14 +37,14 @@
 html, body { background: var(--color-bg); color: var(--color-ink); }
 body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 
-/* Phone-shell wrapper for desktop preview of mobile-first screens. */
+/* Phone-shell wrapper for desktop preview of mobile-first screens.
+   (No overflow:hidden — drawer clipping is handled by the (app) layout.) */
 .app-frame {
   max-width: 430px;
   margin: 0 auto;
   min-height: 100dvh;
   background: var(--color-surface);
   position: relative;
-  overflow: hidden;
 }
 
 /* Focus ring helper for custom focusables */
