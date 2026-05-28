@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zoop.one Claims — Garage Prototype
 
-## Getting Started
+Working prototype of the garage-side Zoop.one Claims app. Mobile-first
+(~390 px frame), no backend — all data is mocked behind typed accessors.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** App Router · React 19 · TypeScript strict
+- **Tailwind CSS v4** (CSS-first tokens in `app/globals.css`)
+- **Zustand** for session, drawer, and toast state
+- **lucide-react** for icons
+- **Fonts**: Geist (body) + Geist Mono (numbers/IDs), via `next/font/google`
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install        # if you cloned fresh
+npm run dev        # http://localhost:3000
+npm run build      # production build (also runs typecheck + lint)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+No environment variables. Closes the tab → session resets (deliberate
+prototype behaviour).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Route map
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| URL | What it is |
+|---|---|
+| `/` | Redirect → `/login` |
+| `/login` | Mobile-number entry + validation → sends OTP |
+| `/login/verify` | 6-digit OTP input, 45s resend countdown |
+| `/register` | First-time "Confirm your garage" form (pre-filled) |
+| `/home` | Dashboard: claim carousel + ProgressDots + tasks + skeletons |
+| `/claims` | My Claims list with filter chips |
+| `/claims/[id]` | Claim detail: status banner, Estimate Approved card, Vertical timeline with sub-items, Documents + Damage Photos |
+| `/support` | Stub (templatized FAQ planned) |
+| `/profile` | Stub (Garage profile planned) |
+| `/sandbox` | Kitchen-sink of tokens + base components |
 
-## Learn More
+## Folder layout
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/
+  (auth)/login, /login/verify, /register   → auth shell, no tabs
+  (app)/home, /claims, /claims/[id], /support  → app shell + bottom tabs + drawer
+  profile/                                  → standalone, no tabs
+  sandbox/                                  → token/component playground
+components/
+  ui/        → Button, Input, SegmentedToggle, Chip, Card, ListRow,
+              ProgressDots, ProgressSegmented, IconTile, FilterChips,
+              Skeleton, ToastViewport
+  shell/    → AppHeader, PageHeader, BottomTabBar, MenuDrawer
+  claims/   → ClaimCard, ClaimCarousel, ClaimListCard, VerticalStepper
+  tasks/    → TaskRow
+  auth/     → OtpInput
+lib/
+  store/    → menu (drawer), session, toast (Zustand)
+  cn.ts, format.ts, claim-helpers.ts
+  mock-data.ts  ← all entities live here, exposed via getX() functions
+types/
+  index.ts  ← shared types (Garage, Claim, Stage, Task, …)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Try the happy path
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. `/` → redirects to `/login`.
+2. Enter any valid 10-digit mobile (e.g. `9839274020`) → **Send OTP**.
+3. Type any 6 digits (other than `000000`, which fails on purpose) → auto-verifies → **/home**.
+4. Tap the burger ☰ → drawer slides in → tap "Sai Garage" → `/profile`.
+5. Tap **My Claims** tab → filter chips → tap any card → claim detail with timeline + documents.
 
-## Deploy on Vercel
+## Known TODOs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `/support` — templatized FAQ surface
+- `/profile` — full Garage profile (Personal info / Contact / KYC)
+- Claim list & dashboard claim sets aren't unified (one entity per array
+  for now; merging is one accessor change)
+- The "View Repair photos" CTA on claim detail is currently a styled
+  no-op; wire to an in-page section or a modal once a design exists
+- Real `<img />` placeholders for document/photo thumbs (currently grey
+  stacked rects)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deploy to Vercel
+
+Two zero-config paths — pick one:
+
+### A. CLI (fastest)
+```bash
+cd ~/Desktop/zoop-claims-prototype
+npx vercel
+```
+Follow the prompts — log in via the browser, accept the default project
+name + scope. Vercel will run `npm run build` remotely and hand back a
+preview URL like `https://zoop-claims-prototype-xyz.vercel.app`.
+
+### B. GitHub + Vercel.com
+```bash
+cd ~/Desktop/zoop-claims-prototype
+gh repo create zoop-claims-prototype --public --source=. --push
+# or: create the repo manually on github.com, then:
+#     git remote add origin <repo-url> && git push -u origin main
+```
+Then go to **vercel.com/new**, click "Import Git Repository", pick the
+repo, accept defaults, **Deploy**.
+
+There are no env vars to set and no build configuration needed.
