@@ -69,3 +69,14 @@ export type Task = {
   due?: string;
   type: TaskType;
 };
+
+export type OnboardingTaskType = "doc" | "survey";
+export type OnboardingTaskState = "pending" | "done";
+export type OnboardingTask = {
+  id: string;
+  title: string;
+  description?: string;
+  state: OnboardingTaskState;
+  type: OnboardingTaskType;
+  required?: boolean;
+};

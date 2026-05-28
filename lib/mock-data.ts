@@ -1,4 +1,4 @@
-import type { Claim, Garage, Task } from "@/types";
+import type { Claim, Garage, OnboardingTask, Task } from "@/types";
 
 export const SAI_GARAGE: Garage = {
   name: "Sai Garage",
@@ -165,6 +165,29 @@ const TASKS: Task[] = [
     type: "photo",
   },
 ];
+
+// First-time garage onboarding checklist — used when the user hasn't given
+// anything yet (no claims, nothing uploaded).
+const ONBOARDING_TASKS: OnboardingTask[] = [
+  { id: "ob-pan", title: "PAN card", state: "pending", type: "doc", required: true },
+  { id: "ob-gst", title: "GST certificate", state: "pending", type: "doc", required: true },
+  { id: "ob-license", title: "Garage license", state: "pending", type: "doc", required: true },
+  { id: "ob-cheque", title: "Bank cancelled cheque", state: "pending", type: "doc", required: true },
+  { id: "ob-id", title: "Owner photo ID (Aadhaar / DL)", state: "pending", type: "doc", required: true },
+  { id: "ob-agreement", title: "Signed service agreement", state: "pending", type: "doc", required: true },
+  {
+    id: "ob-survey",
+    title: "Live image survey",
+    description: "Verify your garage premises · ~5 min",
+    state: "pending",
+    type: "survey",
+    required: true,
+  },
+];
+
+export function getOnboardingTasks(): OnboardingTask[] {
+  return ONBOARDING_TASKS;
+}
 
 // Accessors.
 export function getDashboardClaims(): Claim[] {
