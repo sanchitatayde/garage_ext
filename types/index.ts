@@ -32,15 +32,20 @@ export type Stage = {
   title: string;
   state: StageState;
   timestamp?: string;
+  detail?: string;
+  detailTone?: "warn" | "danger" | "muted";
+  pill?: string;
   subItems?: StageSubItem[];
 };
 
 export type Claim = {
   id: string;
   claimNo: string;
+  shortRef?: string;
   vehicle: string;
   regNo: string;
   insurer: string;
+  insured?: { name: string };
   status: ClaimStatus;
   statusDetail?: string;
   statusDetailTone?: "positive" | "negative" | "neutral";

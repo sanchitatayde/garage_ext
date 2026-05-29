@@ -1,12 +1,14 @@
 "use client";
 import { use } from "react";
 import Link from "next/link";
-import { Info, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
 import { VerticalStepper } from "@/components/claims/VerticalStepper";
+import { InsurerLogo } from "@/components/claims/InsurerLogo";
+import { MediaStrip } from "@/components/claims/MediaStrip";
 import { getClaim } from "@/lib/mock-data";
 import { inr } from "@/lib/format";
 import { statusLabel } from "@/lib/claim-helpers";
@@ -38,15 +40,12 @@ export default function ClaimDetailPage({
     claim.status === "repudiated" || claim.status === "rejected";
   const isClosed = claim.status === "closed" || claim.status === "settled";
   const hasStages = !!claim.stages && claim.stages.length > 0;
+  const mediaCount =
+    (claim.damagePhotos?.count ?? 0) + (claim.documents?.count ?? 0);
+  const damageOnlyCount = claim.damagePhotos?.count ?? 0;
 
-  function viewPhotos() {
-    const el = document.getElementById("damage-photos");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    else toast("Damage photos will appear once uploaded.", "info");
-  }
-
-  function openDocs(label: string) {
-    toast(`${label} gallery — coming soon.`, "info");
+  function uploadPhotos() {
+    toast("Camera opening to capture repair photos…", "info");
   }
 
   return (
@@ -65,7 +64,7 @@ export default function ClaimDetailPage({
         }
       />
 
-      {/* Vehicle status banner — colour adapts to status */}
+      {/* Vehicle + insurer banner */}
       <section
         className={cn(
           "px-5 py-4",
@@ -76,27 +75,45 @@ export default function ClaimDetailPage({
             : "bg-brand-soft"
         )}
       >
-        <div className="flex items-center gap-1.5 text-ink flex-wrap">
-          <span className="text-[16px] font-semibold">{claim.vehicle}</span>
-          <span className="text-muted">·</span>
-          <span className="font-mono text-[14px] text-ink">{claim.regNo}</span>
-          <Info size={14} className="text-muted ml-1" />
-        </div>
-        <p
-          className={cn(
-            "font-mono text-[11px] tracking-wide font-semibold uppercase mt-1",
-            isNegative
-              ? "text-danger"
-              : isClosed
-              ? "text-muted"
-              : "text-brand-strong"
+        <div className="flex items-start gap-3">
+          <InsurerLogo insurer={claim.insurer} />
+          <div className="flex-1 min-w-0">
+            <p className="text-[16px] font-semibold text-ink leading-tight truncate">
+              {claim.vehicle}
+            </p>
+            <p className="font-mono text-[12px] text-muted truncate">
+              {claim.regNo} · {claim.shortRef ?? claim.claimNo}
+            </p>
+            {claim.insured && (
+              <p className="text-[12px] text-muted mt-0.5 truncate">
+                {claim.insured.name}
+              </p>
+            )}
+          </div>
+          {claim.payoutMode === "cashless" && (
+            <Chip tone="neutral" className="font-mono">
+              CASHLESS
+            </Chip>
           )}
-        >
-          {statusLabel(claim.status)}
-        </p>
+        </div>
+        {/* Status caption when not the rich settlement layout */}
+        {(isNegative || isClosed || !claim.approvedAmount) && (
+          <p
+            className={cn(
+              "font-mono text-[11px] tracking-wide font-semibold uppercase mt-2",
+              isNegative
+                ? "text-danger"
+                : isClosed
+                ? "text-muted"
+                : "text-brand-strong"
+            )}
+          >
+            {statusLabel(claim.status)}
+          </p>
+        )}
       </section>
 
-      <section className="px-5 py-4 space-y-4">
+      <section className="px-5 py-4 space-y-5">
         {/* Repudiation reason card */}
         {isNegative && claim.statusDetail && (
           <Card padding="md" className="border-danger/30 bg-danger-soft/60">
@@ -109,7 +126,7 @@ export default function ClaimDetailPage({
           </Card>
         )}
 
-        {/* Status detail (non-detail-rich, non-negative claims) */}
+        {/* Status card (non-detail-rich, non-negative claims) */}
         {!isNegative && !hasStages && claim.statusDetail && (
           <Card padding="md">
             <p className="text-[12px] font-mono uppercase tracking-wide text-muted">
@@ -159,50 +176,39 @@ export default function ClaimDetailPage({
           </Card>
         )}
 
-        {/* View Repair photos CTA — only when damage photos exist */}
-        {claim.damagePhotos && (
-          <Button fullWidth size="lg" type="button" onClick={viewPhotos}>
-            View Repair photos
+        {/* Upload Repair photos CTA — only when this is a repair-stage claim */}
+        {claim.approvedAmount && (
+          <Button fullWidth size="lg" type="button" onClick={uploadPhotos}>
+            Upload Repair photos
           </Button>
         )}
 
-        {/* Timeline */}
+        {/* Timeline (inline, no card wrap — matches new design) */}
         {hasStages && (
-          <div className="pt-2">
+          <div className="pt-1">
             <h2 className="text-[18px] font-semibold text-ink mb-3">
               Timeline
             </h2>
-            <Card padding="md">
-              <VerticalStepper stages={claim.stages!} />
-            </Card>
+            <VerticalStepper stages={claim.stages!} />
           </div>
         )}
 
-        {/* Documents */}
-        {claim.documents && (
+        {/* Documents & Photos (merged) */}
+        {mediaCount > 0 && (
           <div>
             <h2 className="text-[18px] font-semibold text-ink mb-2">
-              Documents
+              Documents &amp; Photos
             </h2>
-            <DocsRow
-              count={claim.documents.count}
-              subtitle={claim.documents.lastAddedRelative}
-              onClick={() => openDocs("Documents")}
-            />
-          </div>
-        )}
-
-        {/* Damage Photos */}
-        {claim.damagePhotos && (
-          <div id="damage-photos">
-            <h2 className="text-[18px] font-semibold text-ink mb-2">
-              Damage Photos
-            </h2>
-            <DocsRow
-              count={claim.damagePhotos.count}
-              subtitle={claim.damagePhotos.lastAddedRelative}
-              onClick={() => openDocs("Damage Photos")}
-            />
+            <Card padding="md">
+              <MediaStrip
+                count={damageOnlyCount}
+                label="Damage"
+                maxVisible={3}
+                onOpen={() =>
+                  toast("Photo gallery coming soon", "info")
+                }
+              />
+            </Card>
           </div>
         )}
 
@@ -211,47 +217,5 @@ export default function ClaimDetailPage({
         </p>
       </section>
     </main>
-  );
-}
-
-function DocsRow({
-  count,
-  subtitle,
-  onClick,
-}: {
-  count: number;
-  subtitle: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand rounded-[16px]"
-    >
-      <Card
-        padding="md"
-        className="flex items-center gap-3 hover:bg-surface-sunken transition"
-      >
-        <ThumbStack />
-        <div className="flex-1">
-          <p className="text-[15px] font-semibold text-ink">
-            {count} uploaded
-          </p>
-          <p className="text-[12px] text-muted">{subtitle}</p>
-        </div>
-        <span className="text-subtle text-lg">›</span>
-      </Card>
-    </button>
-  );
-}
-
-function ThumbStack() {
-  return (
-    <div className="flex shrink-0">
-      <div className="w-11 h-11 rounded-[8px] bg-zinc-200 border-2 border-surface relative" />
-      <div className="w-11 h-11 rounded-[8px] bg-zinc-300 border-2 border-surface relative -ml-3" />
-      <div className="w-11 h-11 rounded-[8px] bg-zinc-400 border-2 border-surface relative -ml-3" />
-    </div>
   );
 }
