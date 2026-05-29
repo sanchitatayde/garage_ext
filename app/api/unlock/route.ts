@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 
 const COOKIE_NAME = "pp_unlocked";
-const ONE_WEEK = 60 * 60 * 24 * 7;
+
+// Cookie lifetime in hours. Configurable via the PROTOTYPE_SESSION_HOURS env
+// var (default 4). After this many hours the visitor has to sign in again.
+function sessionMaxAgeSeconds(): number {
+  const raw = process.env.PROTOTYPE_SESSION_HOURS;
+  const hours = raw ? Number(raw) : 4;
+  if (!Number.isFinite(hours) || hours <= 0) return 4 * 60 * 60;
+  return Math.round(hours * 60 * 60);
+}
 
 export async function POST(req: Request) {
   let body: { username?: unknown; password?: unknown };
@@ -36,7 +44,7 @@ export async function POST(req: Request) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: ONE_WEEK,
+    maxAge: sessionMaxAgeSeconds(),
   });
   return res;
 }
