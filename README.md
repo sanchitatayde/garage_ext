@@ -80,6 +80,36 @@ types/
 - Real `<img />` placeholders for document/photo thumbs (currently grey
   stacked rects)
 
+## Password protection
+
+The whole app is gated behind a username + password (set via env vars). The
+middleware (`middleware.ts`) redirects unauthenticated visitors to `/unlock`;
+on submit, `/api/unlock` validates the creds and sets an `httpOnly` cookie
+that lasts a week.
+
+**Local dev**: copy `.env.local.example` to `.env.local`:
+
+```bash
+cp .env.local.example .env.local
+```
+
+(it's gitignored). Default creds in the example are `ZoopClaims` /
+`Claims@2026`.
+
+**On Vercel**: go to **Project → Settings → Environment Variables** and add
+the same two vars (for all environments: Production, Preview, Development):
+
+| Name | Value |
+|---|---|
+| `PROTOTYPE_USERNAME` | `ZoopClaims` |
+| `PROTOTYPE_PASSWORD` | `Claims@2026` |
+
+After saving, redeploy (Vercel → Deployments → ⋯ → Redeploy) so the new env
+vars are picked up.
+
+This is a polite gate suitable for sharing a prototype with stakeholders.
+It is NOT a security boundary for sensitive data.
+
 ## Deploy to Vercel
 
 Two zero-config paths — pick one:
