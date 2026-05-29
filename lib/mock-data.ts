@@ -1,4 +1,10 @@
-import type { Claim, Garage, OnboardingTask, Task } from "@/types";
+import type {
+  Claim,
+  ClaimStatus,
+  Garage,
+  OnboardingTask,
+  Task,
+} from "@/types";
 
 export const SAI_GARAGE: Garage = {
   name: "Sai Garage",
@@ -9,42 +15,9 @@ export const SAI_GARAGE: Garage = {
   initials: "SG",
 };
 
-// Dashboard carousel claims — short / active for the home page.
-const DASHBOARD_CLAIMS: Claim[] = [
-  {
-    id: "ZP-CLM-2026-04-1842",
-    claimNo: "ZP-CLM-2026-04-1842",
-    vehicle: "Hyundai Verna Lxi",
-    regNo: "MH-56-M-7854",
-    insurer: "HDFC Ergo",
-    status: "in-survey",
-    stage: 2,
-    totalStages: 4,
-    stageLabel: "Under assessment",
-    alert: {
-      title: "Action needed",
-      subtitle: "Re-upload front bumper photo",
-      due: "Due 4 hrs",
-    },
-    updatedAt: "Today",
-  },
-  {
-    id: "ZP-CLM-2026-04-1843",
-    claimNo: "ZP-CLM-2026-04-1843",
-    vehicle: "Maruti Swift VXi",
-    regNo: "MH-56-M-7854",
-    insurer: "HDFC Ergo",
-    status: "approved",
-    stage: 3,
-    totalStages: 4,
-    stageLabel: "Approved for repair",
-    alert: null,
-    updatedAt: "1 day ago",
-  },
-];
-
-// My Claims list — all claims, including history.
-const MY_CLAIMS: Claim[] = [
+// Single source of truth for claims. Dashboard filters to active statuses;
+// My Claims shows everything; detail pages look up by id.
+const CLAIMS: Claim[] = [
   {
     id: "c-1842",
     claimNo: "CLM-2026-04-1842",
@@ -55,6 +28,25 @@ const MY_CLAIMS: Claim[] = [
     statusDetail: "Documents requested",
     statusDetailTone: "positive",
     updatedAt: "6 days ago",
+    stage: 1,
+    totalStages: 4,
+    stageLabel: "Documents needed",
+    alert: {
+      title: "Action needed",
+      subtitle: "Upload required documents",
+      due: "Due in 4 days",
+    },
+    stages: [
+      {
+        id: "s1",
+        title: "Registered",
+        state: "current",
+        timestamp: "Today at 11:00 AM",
+      },
+      { id: "s2", title: "Under investigation", state: "future" },
+      { id: "s3", title: "Approved", state: "future" },
+      { id: "s4", title: "Closed", state: "future" },
+    ],
   },
   {
     id: "c-1843",
@@ -66,6 +58,26 @@ const MY_CLAIMS: Claim[] = [
     statusDetail: "₹18,400 estimated",
     statusDetailTone: "positive",
     updatedAt: "6 days ago",
+    stage: 2,
+    totalStages: 4,
+    stageLabel: "Under assessment",
+    alert: null,
+    stages: [
+      {
+        id: "s1",
+        title: "Registered",
+        state: "done",
+        timestamp: "20 Feb, 11:00 AM",
+      },
+      {
+        id: "s2",
+        title: "Under investigation",
+        state: "current",
+        timestamp: "22 Feb, 11:00 AM",
+      },
+      { id: "s3", title: "Approved", state: "future" },
+      { id: "s4", title: "Closed", state: "future" },
+    ],
   },
   {
     id: "c-1844",
@@ -77,6 +89,10 @@ const MY_CLAIMS: Claim[] = [
     statusDetail: "Repair ongoing",
     statusDetailTone: "positive",
     updatedAt: "1 day ago",
+    stage: 3,
+    totalStages: 4,
+    stageLabel: "Under settlement",
+    alert: null,
     approvedAmount: 38420,
     payoutMode: "cashless",
     payoutMessage: "Insurer will pay your Garage directly",
@@ -118,7 +134,10 @@ const MY_CLAIMS: Claim[] = [
       },
       { id: "s4", title: "Closed", state: "future" },
     ],
-    documents: { count: 6, lastAddedRelative: "Last added today · tap to view" },
+    documents: {
+      count: 6,
+      lastAddedRelative: "Last added today · tap to view",
+    },
     damagePhotos: {
       count: 6,
       lastAddedRelative: "Last added today · tap to view",
@@ -148,12 +167,20 @@ const MY_CLAIMS: Claim[] = [
   },
 ];
 
+const ACTIVE_STATUSES = new Set<ClaimStatus>([
+  "registered",
+  "investigation",
+  "settlement",
+  "in-survey",
+  "approved",
+]);
+
 const TASKS: Task[] = [
   {
     id: "t1",
     title: "Upload Driving License",
     vehicle: "Hyundai Verna Lxi",
-    claimRef: "CLM-2026-04-18",
+    claimRef: "c-1842",
     due: "2 days",
     type: "doc",
   },
@@ -161,7 +188,7 @@ const TASKS: Task[] = [
     id: "t2",
     title: "Reupload front bumper",
     vehicle: "Hyundai Verna Lxi",
-    claimRef: "CLM-2026-04-184",
+    claimRef: "c-1842",
     type: "photo",
   },
 ];
@@ -185,29 +212,26 @@ const ONBOARDING_TASKS: OnboardingTask[] = [
   },
 ];
 
-export function getOnboardingTasks(): OnboardingTask[] {
-  return ONBOARDING_TASKS;
-}
-
 // Accessors.
 export function getDashboardClaims(): Claim[] {
-  return DASHBOARD_CLAIMS;
+  return CLAIMS.filter((c) => ACTIVE_STATUSES.has(c.status));
 }
+
 export function getMyClaims(): Claim[] {
-  return MY_CLAIMS;
+  return CLAIMS;
 }
+
 export function getClaim(id: string): Claim | undefined {
-  // Look in both lists; fall back to the detail-rich claim so any tap shows
-  // the "Repair Approved · repair ongoing" detail per spec.
-  return (
-    MY_CLAIMS.find((c) => c.id === id) ||
-    DASHBOARD_CLAIMS.find((c) => c.id === id) ||
-    MY_CLAIMS.find((c) => !!c.stages)
-  );
+  return CLAIMS.find((c) => c.id === id);
 }
+
 export function getTasks(): Task[] {
   return TASKS;
 }
 
-// Legacy alias for screens still using getClaims() (e.g. dashboard).
+export function getOnboardingTasks(): OnboardingTask[] {
+  return ONBOARDING_TASKS;
+}
+
+// Legacy alias for older imports that used getClaims().
 export const getClaims = getDashboardClaims;
