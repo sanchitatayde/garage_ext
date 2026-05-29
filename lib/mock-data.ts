@@ -215,7 +215,15 @@ export function getMyClaims(): Claim[] {
 }
 
 export function getClaim(id: string): Claim | undefined {
-  return CLAIMS.find((c) => c.id === id);
+  // Prototype: every claim card opens the same rich "Repair & completion"
+  // detail (per the spec — "clicking any claims card → Repair Approved").
+  // The id is preserved in the URL but the demo content is uniform.
+  const requested = CLAIMS.find((c) => c.id === id);
+  if (!requested) return undefined;
+  const rich = CLAIMS.find(
+    (c) => !!c.approvedAmount && !!c.stages && !!c.damagePhotos
+  );
+  return rich ?? requested;
 }
 
 export function getTasks(): Task[] {
