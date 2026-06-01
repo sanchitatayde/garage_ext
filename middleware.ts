@@ -28,9 +28,10 @@ export function middleware(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-// Skip Next internals, static assets, the unlock UI itself and the unlock API.
+// Skip Next internals, static assets, the unlock UI itself, the unlock API
+// and the cross-prototype bridge from customerext.vercel.app.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|unlock|api/unlock).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|unlock|api/unlock|api/bridge).*)",
   ],
 };
