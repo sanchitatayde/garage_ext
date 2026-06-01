@@ -1,5 +1,6 @@
 import { MenuDrawer } from "@/components/shell/MenuDrawer";
 import { BottomTabBar } from "@/components/shell/BottomTabBar";
+import { FlowSwitchFab } from "@/components/shell/FlowSwitchFab";
 
 export default function AppLayout({
   children,
@@ -11,6 +12,8 @@ export default function AppLayout({
       <div className="flex-1 overflow-y-auto">{children}</div>
       <BottomTabBar />
       <MenuDrawer />
+      {/* Sits above the BottomTabBar so it never gets obscured. */}
+      <FlowSwitchFab bottomClass="bottom-20" />
     </div>
   );
 }
